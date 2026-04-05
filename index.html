@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Build-a-Claw Appointment Scheduling</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "NVIDIA Sans", "Helvetica Neue", Arial, sans-serif;
+      background: #f4f4f4;
+      color: #1a1a1a;
+      padding: 40px 20px;
+    }
+
+    .form-card {
+      max-width: 680px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+
+    .form-header {
+      background: #76b900;
+      color: #fff;
+      padding: 28px 36px;
+    }
+
+    .form-header .step-label {
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      opacity: 0.85;
+      margin-bottom: 6px;
+    }
+
+    .form-header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .form-header p {
+      margin-top: 8px;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .form-body {
+      padding: 36px;
+    }
+
+    .field-group {
+      margin-bottom: 28px;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #1a1a1a;
+    }
+
+    .field-group label .optional {
+      font-weight: 400;
+      color: #888;
+      font-size: 12px;
+      margin-left: 6px;
+    }
+
+    .radio-group, .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .radio-option, .option-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .radio-option:hover, .option-card:hover {
+      border-color: #76b900;
+      background: #f9ffe6;
+    }
+
+    .radio-option input[type="radio"],
+    .option-card input[type="radio"] {
+      margin-top: 2px;
+      accent-color: #76b900;
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .radio-option.selected, .option-card.selected {
+      border-color: #76b900;
+      background: #f0fad8;
+    }
+
+    .option-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .option-meta {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    /* Conditional sections */
+    .conditional-section {
+      display: none;
+      border-left: 3px solid #76b900;
+      padding-left: 20px;
+      margin-left: 4px;
+    }
+
+    .conditional-section.visible {
+      display: block;
+    }
+
+    /* Date tiles */
+    .date-tiles {
+      display: flex;
+      gap: 12px;
+    }
+
+    .date-tile {
+      flex: 1;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      padding: 14px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .date-tile input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0; height: 0;
+    }
+
+    .date-tile:hover { border-color: #76b900; background: #f9ffe6; }
+    .date-tile.selected { border-color: #76b900; background: #f0fad8; }
+
+    .date-tile .day-name {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      font-weight: 600;
+    }
+
+    .date-tile .date-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.1;
+    }
+
+    .date-tile .month {
+      font-size: 13px;
+      color: #555;
+      font-weight: 600;
+    }
+
+    /* Time slot grid */
+    .time-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .time-chip {
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #333;
+      transition: border-color 0.15s, background 0.15s;
+      position: relative;
+    }
+
+    .time-chip input[type="radio"] {
+      position: absolute;
+      opacity: 0;
+      width: 0; height: 0;
+    }
+
+    .time-chip:hover { border-color: #76b900; background: #f9ffe6; }
+    .time-chip.selected { border-color: #76b900; background: #f0fad8; color: #3a6000; font-weight: 700; }
+    .time-chip.disabled {
+      background: #f5f5f5;
+      color: #bbb;
+      border-color: #e0e0e0;
+      cursor: not-allowed;
+    }
+
+    .time-note {
+      font-size: 12px;
+      color: #888;
+      margin-top: 8px;
+    }
+
+    .time-note.warning {
+      color: #b36200;
+      font-weight: 500;
+    }
+
+    /* Submit */
+    .form-footer {
+      padding: 0 36px 36px;
+    }
+
+    .btn-submit {
+      width: 100%;
+      background: #76b900;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 14px 24px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.5px;
+      transition: background 0.15s;
+    }
+
+    .btn-submit:hover { background: #5e9400; }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #eee;
+      margin: 0 36px 28px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #76b900;
+      font-weight: 700;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="form-card">
+
+  <!-- Header -->
+  <div class="form-header">
+    <div class="step-label">Step B</div>
+    <h1>Build-a-Claw Appointment Scheduling</h1>
+    <p>No Dev Days registration required. Open to all attendees.</p>
+  </div>
+
+  <div class="form-body">
+    <div class="section-title">Appointment Preferences</div>
+
+    <!-- Q35 -->
+    <div class="field-group">
+      <label>
+        Q35. Would you like to schedule a Build-a-Claw appointment?
+        <span class="optional">optional</span>
+      </label>
+      <div class="radio-group" id="q35-group">
+        <label class="radio-option" onclick="selectQ35(this, 'yes')">
+          <input type="radio" name="q35" value="yes" />
+          <div>
+            <div class="option-label">Yes</div>
+          </div>
+        </label>
+        <label class="radio-option" onclick="selectQ35(this, 'no')">
+          <input type="radio" name="q35" value="no" />
+          <div>
+            <div class="option-label">No</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- Q36–Q38: conditional on Q35 = Yes -->
+    <div class="conditional-section" id="q36-section">
+
+      <!-- Q36 -->
+      <div class="field-group">
+        <label>Q36. What type of appointment are you interested in?</label>
+        <div class="option-group" id="q36-group">
+
+          <label class="option-card" onclick="selectQ36(this, 'demo')">
+            <input type="radio" name="q36" value="demo" />
+            <div>
+              <div class="option-label">Demo Only</div>
+              <div class="option-meta">15 minutes &mdash; Watch a live product demonstration</div>
+            </div>
+          </label>
+
+          <label class="option-card" onclick="selectQ36(this, 'dgx')">
+            <input type="radio" name="q36" value="dgx" />
+            <div>
+              <div class="option-label">Purchase &amp; Setup DGX Spark</div>
+              <div class="option-meta">1 hour &mdash; Hands-on purchase, setup, and onboarding session</div>
+            </div>
+          </label>
+
+          <label class="option-card" onclick="selectQ36(this, 'byod')">
+            <input type="radio" name="q36" value="byod" />
+            <div>
+              <div class="option-label">BYOD &mdash; Resource Guide + Expert Consultation</div>
+              <div class="option-meta">30 minutes &mdash; Bring your own device, get a resource guide and 1:1 expert session</div>
+            </div>
+          </label>
+
+        </div>
+      </div>
+
+      <!-- Q37 -->
+      <div class="field-group">
+        <label>Q37. What is your preferred date?</label>
+        <div class="date-tiles">
+
+          <div class="date-tile" id="date-tue" onclick="selectDate(this, 'tue')">
+            <input type="radio" name="q37" value="tue" />
+            <div class="day-name">Tuesday</div>
+            <div class="date-num">21</div>
+            <div class="month">April</div>
+          </div>
+
+          <div class="date-tile" id="date-wed" onclick="selectDate(this, 'wed')">
+            <input type="radio" name="q37" value="wed" />
+            <div class="day-name">Wednesday</div>
+            <div class="date-num">22</div>
+            <div class="month">April</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Q38 -->
+      <div class="field-group">
+        <label>Q38. What is your preferred time slot?</label>
+        <div class="time-grid" id="time-grid"></div>
+        <p class="time-note" id="time-note"></p>
+      </div>
+
+    </div><!-- /conditional -->
+  </div><!-- /form-body -->
+
+  <hr class="divider" />
+
+  <div class="form-footer">
+    <button class="btn-submit" onclick="submitForm()">Submit Registration</button>
+  </div>
+
+</div><!-- /form-card -->
+
+<script>
+  // ── State ────────────────────────────────────────────────
+  let selectedQ35 = null;
+  let selectedQ36 = null;
+  let selectedDate = null;
+  let selectedTime = null;
+
+  // ── Q35 ──────────────────────────────────────────────────
+  function selectQ35(el, val) {
+    selectedQ35 = val;
+    document.querySelectorAll('#q35-group .radio-option').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+
+    const section = document.getElementById('q36-section');
+    if (val === 'yes') {
+      section.classList.add('visible');
+    } else {
+      section.classList.remove('visible');
+      resetConditionals();
+    }
+  }
+
+  // ── Q36 ──────────────────────────────────────────────────
+  function selectQ36(el, val) {
+    selectedQ36 = val;
+    document.querySelectorAll('#q36-group .option-card').forEach(r => r.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+    renderTimeSlots(); // cutoff changes by appointment type
+  }
+
+  // ── Q37 ──────────────────────────────────────────────────
+  function selectDate(el, val) {
+    selectedDate = val;
+    document.querySelectorAll('.date-tile').forEach(t => t.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+
+  // ── Q38 — Time slot grid ──────────────────────────────────
+  function renderTimeSlots() {
+    const grid = document.getElementById('time-grid');
+    const note = document.getElementById('time-note');
+
+    // All 30-min slots: 9:00 AM – 4:30 PM
+    const slots = [];
+    for (let h = 9; h <= 16; h++) {
+      slots.push({ h, m: 0 });
+      if (h < 16 || true) slots.push({ h, m: 30 });
+    }
+    // Filter: 9:00 – 16:30 (30-min), but last usable start depends on type
+    // DGX Spark (1 hr): last start = 16:00 (4:00 PM cutoff)
+    // Others (15 min / 30 min): last start = 16:30 (4:30 PM)
+    const isDGX = selectedQ36 === 'dgx';
+    const cutoffMinutes = isDGX ? (16 * 60) : (16 * 60 + 30);
+
+    const allSlots = [];
+    for (let totalMin = 9 * 60; totalMin <= 16 * 60 + 30; totalMin += 30) {
+      allSlots.push(totalMin);
+    }
+
+    grid.innerHTML = '';
+    selectedTime = null;
+
+    allSlots.forEach(totalMin => {
+      const h = Math.floor(totalMin / 60);
+      const m = totalMin % 60;
+      const isDisabled = totalMin > cutoffMinutes;
+      const label = formatTime(h, m);
+
+      const chip = document.createElement('div');
+      chip.className = 'time-chip' + (isDisabled ? ' disabled' : '');
+      chip.innerHTML = `<input type="radio" name="q38" value="${totalMin}" ${isDisabled ? 'disabled' : ''} />${label}`;
+
+      if (!isDisabled) {
+        chip.onclick = () => selectTime(chip, totalMin);
+      }
+
+      grid.appendChild(chip);
+    });
+
+    if (isDGX) {
+      note.className = 'time-note warning';
+      note.textContent = '⚠ Purchase & Setup DGX Spark sessions are 1 hour. Last available start time is 4:00 PM.';
+    } else {
+      note.className = 'time-note';
+      note.textContent = 'Sessions run in 30-minute increments from 9:00 AM to 4:30 PM.';
+    }
+  }
+
+  function selectTime(el, val) {
+    selectedTime = val;
+    document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    el.querySelector('input').checked = true;
+  }
+
+  function formatTime(h, m) {
+    const ampm = h < 12 ? 'AM' : 'PM';
+    const displayH = h > 12 ? h - 12 : h;
+    const displayM = m === 0 ? '00' : '30';
+    return `${displayH}:${displayM} ${ampm}`;
+  }
+
+  // ── Reset ─────────────────────────────────────────────────
+  function resetConditionals() {
+    selectedQ36 = null;
+    selectedDate = null;
+    selectedTime = null;
+    document.querySelectorAll('#q36-group .option-card').forEach(r => r.classList.remove('selected'));
+    document.querySelectorAll('.date-tile').forEach(t => t.classList.remove('selected'));
+    document.getElementById('time-grid').innerHTML = '';
+    document.getElementById('time-note').textContent = '';
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  function submitForm() {
+    if (!selectedQ35) {
+      alert('Please answer Q35 to continue.');
+      return;
+    }
+    if (selectedQ35 === 'yes') {
+      if (!selectedQ36) { alert('Please select an appointment type (Q36).'); return; }
+      if (!selectedDate) { alert('Please select a preferred date (Q37).'); return; }
+      if (!selectedTime) { alert('Please select a preferred time slot (Q38).'); return; }
+    }
+
+    const summary = selectedQ35 === 'no'
+      ? 'No appointment requested. Registration complete!'
+      : `Appointment requested:\n• Type: ${labelFor(selectedQ36)}\n• Date: ${selectedDate === 'tue' ? 'Tue Apr 21' : 'Wed Apr 22'}\n• Time: ${formatTime(Math.floor(selectedTime/60), selectedTime%60)}`;
+
+    alert('✓ Submitted!\n\n' + summary);
+  }
+
+  function labelFor(val) {
+    const map = { demo: 'Demo Only (15 min)', dgx: 'Purchase & Setup DGX Spark (1 hr)', byod: 'BYOD – Resource Guide + Expert Consultation (30 min)' };
+    return map[val] || val;
+  }
+
+  // Initialize time grid helper text
+  document.getElementById('time-note').textContent = 'Select an appointment type first to see available time slots.';
+</script>
+
+</body>
+</html>
