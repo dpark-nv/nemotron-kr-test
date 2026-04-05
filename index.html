@@ -261,6 +261,44 @@
       font-weight: 700;
       margin-bottom: 20px;
     }
+
+    /* Text inputs */
+    .input-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .input-row .field-group {
+      flex: 1;
+    }
+
+    .text-input {
+      width: 100%;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #1a1a1a;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    .text-input:focus {
+      border-color: #76b900;
+      box-shadow: 0 0 0 3px rgba(118,185,0,0.12);
+    }
+
+    .text-input.error {
+      border-color: #d9534f;
+    }
+
+    .field-error {
+      font-size: 12px;
+      color: #d9534f;
+      margin-top: 5px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -275,6 +313,36 @@
   </div>
 
   <div class="form-body">
+    <div class="section-title">Contact Information</div>
+
+    <!-- Name row -->
+    <div class="input-row">
+      <div class="field-group">
+        <label for="firstName">First Name <span style="color:#d9534f">*</span></label>
+        <input type="text" id="firstName" class="text-input" placeholder="Jane" />
+        <div class="field-error" id="err-firstName">Please enter your first name.</div>
+      </div>
+      <div class="field-group">
+        <label for="lastName">Last Name <span style="color:#d9534f">*</span></label>
+        <input type="text" id="lastName" class="text-input" placeholder="Smith" />
+        <div class="field-error" id="err-lastName">Please enter your last name.</div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="field-group">
+      <label for="email">Email Address <span style="color:#d9534f">*</span></label>
+      <input type="email" id="email" class="text-input" placeholder="jane.smith@company.com" />
+      <div class="field-error" id="err-email">Please enter a valid email address.</div>
+    </div>
+
+    <!-- Phone -->
+    <div class="field-group">
+      <label for="phone">Phone Number <span class="optional">optional</span></label>
+      <input type="tel" id="phone" class="text-input" placeholder="+1 (555) 000-0000" />
+    </div>
+
+    <hr style="border:none;border-top:1px solid #eee;margin:8px 0 28px;" />
     <div class="section-title">Appointment Preferences</div>
 
     <!-- Q35 -->
@@ -492,6 +560,26 @@
 
   // ── Submit ────────────────────────────────────────────────
   function submitForm() {
+    // Validate contact fields
+    let hasError = false;
+
+    const fields = [
+      { id: 'firstName', errId: 'err-firstName', check: v => v.trim().length > 0 },
+      { id: 'lastName',  errId: 'err-lastName',  check: v => v.trim().length > 0 },
+      { id: 'email',     errId: 'err-email',     check: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()) },
+    ];
+
+    fields.forEach(({ id, errId, check }) => {
+      const input = document.getElementById(id);
+      const errEl = document.getElementById(errId);
+      const valid = check(input.value);
+      input.classList.toggle('error', !valid);
+      errEl.style.display = valid ? 'none' : 'block';
+      if (!valid) hasError = true;
+    });
+
+    if (hasError) return;
+
     if (!selectedQ35) {
       alert('Please answer Q35 to continue.');
       return;
